@@ -1,0 +1,64 @@
+<?php
+
+
+/**
+ * hook_menu() implementation
+ */
+function quicktel_sms_menu() {
+  $items = array();
+
+  //config page
+  $items['admin/config/services/quicktel-sms'] = array(
+    'title' => 'Quick Telecom SMS',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('_quicktel_sms_admin_page'),
+    'access callback' => array('administer quicktel sms'),
+    'type' => MENU_NORMAL_ITEM,
+  );
+
+  return $items;
+} //quicktel_sms_menu
+
+
+/**
+ *
+ * hook_permission() implementation
+ *
+ * @return array
+ */
+function quicktel_sms_permission() {
+  return array(
+    'administer quicktel sms' => array(
+      'title' => t('Administer Quicktel'),
+      'description' => t('Administer Quick Telecom SMS gateway'),
+    ),
+  );
+} //quicktel_sms_permission
+
+
+/**
+ *
+ * Generates admin form for module
+ *
+ * @param $form
+ * @param $form_state
+ *
+ * @return array
+ */
+function _quicktel_sms_admin_page($form, &$form_state) {
+  $form['quicktel_sms_user'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Login'),
+    '#default_value' => variable_get('quicktel_sms_user', ''),
+    '#required' => TRUE,
+  );
+
+  $form['quicktel_sms_password'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Login'),
+    '#default_value' => variable_get('quicktel_sms_password', ''),
+    '#required' => TRUE,
+  );
+
+  return system_settings_form($form);
+} //_quicktel_sms_admin_page
