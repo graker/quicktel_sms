@@ -1,0 +1,3 @@
+name = Quick Telecom SMS
+description = "Quick Telecom SMS gateway integration"
+core = 7.x
