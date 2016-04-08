@@ -48,6 +48,23 @@ function quicktel_sms_permission() {
  * @return array
  */
 function _quicktel_sms_admin_page($form, &$form_state) {
+  //get balance
+  $response = _quicktel_sms_send_request('balance');
+
+  if (isset($response->balance)) {
+    //show balance
+    $balance = (string)$response->balance->AGT_BALANCE;
+    $overdraft = (string)$response->balance->OVERDRAFT;
+    $form['quicktel_sms_balance'] = array(
+      '#type' => 'markup',
+      '#markup' => "<p>Balance: $balance, Overdraft: $overdraft </p>",
+    );
+  } else if (isset($response->errors)) {
+    //we have an error getting balance, display it
+    drupal_set_message((string)$response->errors->error, 'error');
+  }
+
+  //get settings
   $form['quicktel_sms_user'] = array(
     '#type' => 'textfield',
     '#title' => t('Quicktel Login'),
@@ -70,10 +87,6 @@ function _quicktel_sms_admin_page($form, &$form_state) {
     '#default_value' => variable_get('quicktel_sms_https', 1),
   );
 
-  $balance_response = _quicktel_sms_send_request('balance');
-  dpm($balance_response);
-  dpm($balance_response->data);
-
   return system_settings_form($form);
 } //_quicktel_sms_admin_page
 
@@ -83,7 +96,7 @@ function _quicktel_sms_admin_page($form, &$form_state) {
  * Sends a request with type given
  *
  * @param string $request_type type of request: balance, ...
- * @return array response
+ * @return \SimpleXMLElement or FALSE if error parsing XML
  */
 function _quicktel_sms_send_request($request_type = '') {
   $request = array();
@@ -91,7 +104,7 @@ function _quicktel_sms_send_request($request_type = '') {
   _quicktel_sms_add_authorization($request);
 
   //add request-specific data
-  //TODO move type-specific logic to separate function
+  //TODO decouple type-specific logic
   switch ($request_type) {
     case 'balance':
       $request['action'] = 'balance';
@@ -115,7 +128,7 @@ function _quicktel_sms_send_request($request_type = '') {
   $response = drupal_http_request($request_url, $options);
   $response->data = gzdecode($response->data);
 
-  return $response;
+  return simplexml_load_string($response->data);
 } //_quicktel_sms_send_request
 
 
@@ -132,6 +145,5 @@ function _quicktel_sms_add_authorization(&$request) {
   if ($user && $password) {
     $request['user'] = $user;
     $request['pass'] = $password;
-    $request['pass'] = '123';
   }
 } //_quicktel_sms_add_authorization

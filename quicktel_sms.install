@@ -7,4 +7,5 @@
 function quicktel_sms_uninstall() {
   variable_del('quicktel_sms_user');
   variable_del('quicktel_sms_password');
+  variable_del('quicktel_sms_https');
 }
