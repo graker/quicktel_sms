@@ -1,5 +1,7 @@
 <?php
 
+define('QUICKTEL_SMS_GATE_HTTP', 'http://service.qtelecom.ru/public/http/');
+define('QUICKTEL_SMS_GATE_HTTPS', 'https://go.qtelecom.ru/public/http/');
 
 /**
  * hook_menu() implementation
@@ -12,7 +14,7 @@ function quicktel_sms_menu() {
     'title' => 'Quick Telecom SMS',
     'page callback' => 'drupal_get_form',
     'page arguments' => array('_quicktel_sms_admin_page'),
-    'access callback' => array('administer quicktel sms'),
+    'access arguments' => array('administer quicktel sms'),
     'type' => MENU_NORMAL_ITEM,
   );
 
@@ -48,17 +50,88 @@ function quicktel_sms_permission() {
 function _quicktel_sms_admin_page($form, &$form_state) {
   $form['quicktel_sms_user'] = array(
     '#type' => 'textfield',
-    '#title' => t('Login'),
+    '#title' => t('Quicktel Login'),
     '#default_value' => variable_get('quicktel_sms_user', ''),
     '#required' => TRUE,
+    '#description' => t('Login to Quick Telecom service (as provided by the service)'),
   );
 
   $form['quicktel_sms_password'] = array(
     '#type' => 'textfield',
-    '#title' => t('Login'),
+    '#title' => t('Quicktel password'),
     '#default_value' => variable_get('quicktel_sms_password', ''),
     '#required' => TRUE,
+    '#description' => t('Password to Quick Telecom service (as provided by the service)'),
   );
+
+  $form['quicktel_sms_https'] = array(
+    '#type' => 'checkbox',
+    '#title' => 'HTTPS',
+    '#default_value' => variable_get('quicktel_sms_https', 1),
+  );
+
+  $balance_response = _quicktel_sms_send_request('balance');
+  dpm($balance_response);
+  dpm($balance_response->data);
 
   return system_settings_form($form);
 } //_quicktel_sms_admin_page
+
+
+/**
+ *
+ * Sends a request with type given
+ *
+ * @param string $request_type type of request: balance, ...
+ * @return array response
+ */
+function _quicktel_sms_send_request($request_type = '') {
+  $request = array();
+
+  _quicktel_sms_add_authorization($request);
+
+  //add request-specific data
+  //TODO move type-specific logic to separate function
+  switch ($request_type) {
+    case 'balance':
+      $request['action'] = 'balance';
+      break;
+    default:
+      break;
+  }
+
+  $headers = array(
+    'Content-Type' => 'application/x-www-form-urlencoded',
+  );
+  $options = array(
+    'headers' => $headers,
+    'method' => 'POST',
+    'data' => http_build_query($request),
+  );
+
+  //check which url to use
+  $request_url = (variable_get('quicktel_sms_https', 1)) ? QUICKTEL_SMS_GATE_HTTPS : QUICKTEL_SMS_GATE_HTTP;
+
+  $response = drupal_http_request($request_url, $options);
+  $response->data = gzdecode($response->data);
+
+  return $response;
+} //_quicktel_sms_send_request
+
+
+/**
+ *
+ * Add authorization data (login, password) to the request
+ *
+ * @param $request
+ */
+function _quicktel_sms_add_authorization(&$request) {
+  $user = variable_get('quicktel_sms_user', '');
+  $password = variable_get('quicktel_sms_password', '');
+
+  if ($user && $password) {
+    $request['user'] = $user;
+    $request['pass'] = $password;
+    $request['pass'] = '123';
+  }
+} //_quicktel_sms_add_authorization
