@@ -18,6 +18,15 @@ function quicktel_sms_menu() {
     'type' => MENU_NORMAL_ITEM,
   );
 
+  //test send form
+  $items['admin/config/services/quicktel-sms/test'] = array(
+    'title' => 'Test send',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('_quicktel_sms_test_send_form'),
+    'access arguments' => array('administer quicktel sms'),
+    'type' => MENU_LOCAL_ACTION,
+  );
+
   return $items;
 } //quicktel_sms_menu
 
@@ -49,7 +58,8 @@ function quicktel_sms_permission() {
  */
 function _quicktel_sms_admin_page($form, &$form_state) {
   //get balance
-  $response = _quicktel_sms_send_request('balance');
+  $request = array('action' => 'balance');
+  $response = _quicktel_sms_send_request($request);
 
   if (isset($response->balance)) {
     //show balance
@@ -93,25 +103,95 @@ function _quicktel_sms_admin_page($form, &$form_state) {
 
 /**
  *
+ * Generates test form to send SMS
+ *
+ * @param $form
+ * @param $form_state
+ * @return array
+ */
+function _quicktel_sms_test_send_form($form, &$form_state) {
+  $form = array();
+
+  $form['phones'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Phones'),
+    '#description' => t('Type in one or more phone numbers separated by commas. E.g. "+79031321232, 88007899878"'),
+    '#default_value' => '',
+    '#required' => TRUE,
+  );
+
+  $form['message'] = array(
+    '#type' => 'textarea',
+    '#title' => t('Message'),
+    '#description' => t('Type in the message to send'),
+    '#default_value' => '',
+    '#required' => TRUE,
+  );
+
+  $form['send'] = array(
+    '#type' => 'submit',
+    '#value' => t('Send'),
+  );
+
+  return $form;
+} //_quicktel_sms_test_send_form
+
+
+/**
+ *
+ * Test send form validation
+ *
+ * @param $form
+ * @param $form_state
+ */
+function _quicktel_sms_test_send_form_validate($form, &$form_state) {
+  //TODO validate phone numbers
+} //_quicktel_sms_test_send_form_validate
+
+
+/**
+ *
+ * Test send form submission
+ *
+ * @param $form
+ * @param $form_state
+ */
+function _quicktel_sms_test_send_form_submit($form, &$form_state) {
+  //TODO process phones more thoroughly?
+  $phones = array();
+  foreach (explode(',', $form_state['values']['phones']) as $phone) {
+    $phones[] = trim($phone);
+  }
+
+  quicktel_sms_send($phones, $form_state['values']['message']);
+} //_quicktel_sms_test_send_form_submit
+
+
+/**
+ *
+ * Sends $message to $phones given
+ *
+ * @param array $phones - array of phone strings
+ * @param $message - text message to be sent
+ */
+function quicktel_sms_send($phones, $message) {
+  $request = array();
+  $request['action'] = 'post_sms';
+  $request['message'] = trim($message);
+  $request['target'] = implode(', ', $phones);
+  _quicktel_sms_send_request($request);
+} //quicktel_sms_send
+
+
+/**
+ *
  * Sends a request with type given
  *
- * @param string $request_type type of request: balance, ...
+ * @param array $request array of request to be sent (with at least 'action' set to action type)
  * @return \SimpleXMLElement or FALSE if error parsing XML
  */
-function _quicktel_sms_send_request($request_type = '') {
-  $request = array();
-
+function _quicktel_sms_send_request(&$request) {
   _quicktel_sms_add_authorization($request);
-
-  //add request-specific data
-  //TODO decouple type-specific logic
-  switch ($request_type) {
-    case 'balance':
-      $request['action'] = 'balance';
-      break;
-    default:
-      break;
-  }
 
   $headers = array(
     'Content-Type' => 'application/x-www-form-urlencoded',
