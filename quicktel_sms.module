@@ -97,6 +97,13 @@ function _quicktel_sms_admin_page($form, &$form_state) {
     '#default_value' => variable_get('quicktel_sms_https', 1),
   );
 
+  $form['quicktel_sms_sender_name'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Sender name'),
+    '#default_value' => variable_get('quicktel_sms_sender_name', ''),
+    '#description' => t('Sender name to send messages from, as registered in the service'),
+  );
+
   return system_settings_form($form);
 } //_quicktel_sms_admin_page
 
@@ -185,6 +192,11 @@ function quicktel_sms_send($phones, $message) {
   $request['action'] = 'post_sms';
   $request['message'] = trim($message);
   $request['target'] = implode(', ', $phones);
+
+  $sender = variable_get('quicktel_sms_sender_name', '');
+  if ($sender) {
+    $request['sender'] = $sender;
+  }
 
   $response = _quicktel_sms_send_request($request);
 

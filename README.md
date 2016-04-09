@@ -6,4 +6,6 @@ It's a stand alone module to send SMS using Quick Telecom gateway (http://www.qt
 Supported features:
  - config page with login, password and remaining balance
  - HTTP/HTTPS protocol implementation
- - send SMS to one or multiple recipients using quicktel_sms_send() function.
+ - Sender field support (you have to register sender in the service prior to use)
+ - Send SMS to one or multiple recipients using quicktel_sms_send() function.
+ 
