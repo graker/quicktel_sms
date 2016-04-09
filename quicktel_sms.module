@@ -104,6 +104,13 @@ function _quicktel_sms_admin_page($form, &$form_state) {
     '#description' => t('Sender name to send messages from, as registered in the service'),
   );
 
+  $form['quicktel_sms_send_time_period'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Time period'),
+    '#default_value' => variable_get('quicktel_sms_send_time_period', ''),
+    '#description' => t('Set, for example, to 10:00-19:00, to limit SMS sending to this period only.'),
+  );
+
   return system_settings_form($form);
 } //_quicktel_sms_admin_page
 
@@ -122,7 +129,7 @@ function _quicktel_sms_test_send_form($form, &$form_state) {
   $form['phones'] = array(
     '#type' => 'textfield',
     '#title' => t('Phones'),
-    '#description' => t('Type in one or more phone numbers separated by commas. E.g. "+79031321232, 88007899878"'),
+    '#description' => t('Type in one or more phone numbers separated by commas. E.g. "+79031321232, 88007899878". Note that phones won\'t be validated and will be passed to sending function as is.'),
     '#default_value' => '',
     '#required' => TRUE,
   );
@@ -146,25 +153,12 @@ function _quicktel_sms_test_send_form($form, &$form_state) {
 
 /**
  *
- * Test send form validation
- *
- * @param $form
- * @param $form_state
- */
-function _quicktel_sms_test_send_form_validate($form, &$form_state) {
-  //TODO validate phone numbers
-} //_quicktel_sms_test_send_form_validate
-
-
-/**
- *
  * Test send form submission
  *
  * @param $form
  * @param $form_state
  */
 function _quicktel_sms_test_send_form_submit($form, &$form_state) {
-  //TODO process phones more thoroughly?
   $phones = array();
   foreach (explode(',', $form_state['values']['phones']) as $phone) {
     $phones[] = trim($phone);
@@ -196,6 +190,10 @@ function quicktel_sms_send($phones, $message) {
   $sender = variable_get('quicktel_sms_sender_name', '');
   if ($sender) {
     $request['sender'] = $sender;
+  }
+  $time_period = variable_get('quicktel_sms_send_time_period', '');
+  if ($time_period) {
+    $request['time_period'] = $time_period;
   }
 
   $response = _quicktel_sms_send_request($request);

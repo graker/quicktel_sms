@@ -7,6 +7,7 @@ Supported features:
  - config page with login, password and remaining balance
  - HTTP/HTTPS protocol implementation
  - Sender field support (you have to register sender in the service prior to use)
+ - Time period support (limit SMS sending to certain time of the day)
  - Send SMS to one or multiple recipients using quicktel_sms_send() function.
  
 ### To install:
